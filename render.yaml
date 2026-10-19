@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: nova-api
+    env: docker
+    plan: free
+    envVars:
+      - key: LLM_PROVIDER
+        value: openai
+      - key: LLM_BASE_URL
+        value: https://api.groq.com/openai/v1
+      - key: LLM_API_KEY
+        sync: false
+      - key: NOVA_MODEL
+        value: llama-3.3-70b-versatile

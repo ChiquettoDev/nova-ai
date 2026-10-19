@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+
+html, body, #root { height: 100%; }
+
+body {
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(10,132,255,0.18), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(138,92,246,0.12), transparent 60%),
+    #0a0b10;
+  background-attachment: fixed;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #252938; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #3a4055; }
+
+.prose-nova { color: #d6dcf0; }
+.prose-nova pre { background: #11131a; border: 1px solid #252938; border-radius: 12px; }
+.prose-nova code { color: #7cc2ff; }
+.prose-nova a { color: #3fa3ff; }
+
+.glass {
+  background: linear-gradient(180deg, rgba(26,29,39,0.7), rgba(17,19,26,0.5));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.input-glow:focus-within {
+  box-shadow: 0 0 0 1px rgba(10,132,255,0.5), 0 0 40px -8px rgba(10,132,255,0.5);
+}
