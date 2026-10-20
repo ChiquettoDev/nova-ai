@@ -1,0 +1,11 @@
+# Android build
+android/**/build/
+android/.gradle/
+android/local.properties
+
+# Web
+node_modules/
+dist/
+
+# Misc
+*.log
