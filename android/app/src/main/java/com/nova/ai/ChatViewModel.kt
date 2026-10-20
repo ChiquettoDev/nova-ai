@@ -28,6 +28,7 @@ class ChatViewModel : ViewModel() {
     var availableModels = mutableStateListOf<String>()
     var pendingImage by mutableStateOf<String?>(null)
     var offlineStatus by mutableStateOf("Modelo não baixado")
+    var downloadProgress by mutableStateOf(0)
 
     private var llm: LlmInference? = null
     private var wikiData: String = ""
@@ -94,10 +95,7 @@ class ChatViewModel : ViewModel() {
         isStreaming = true
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val modelFile = File((context.getExternalFilesDir(null) ?: context.filesDir), "gemma-2b-it-gpu-int4.bin")
-                if (!modelFile.exists() || modelFile.length() < 1_000_000_000) {
-                    throw IllegalStateException("Modelo offline não encontrado. Baixe 'gemma-2b-it-gpu-int4.bin' (~1.5GB) para ${modelFile.absolutePath} e tente novamente.")
-                }
+                val modelFile = ensureModel(context)
                 if (llm == null) {
                     val options = LlmInference.LlmInferenceOptions.builder()
                         .setModelPath(modelFile.absolutePath)
@@ -127,6 +125,34 @@ class ChatViewModel : ViewModel() {
         return try {
             context.assets.open("wikipedia.json").bufferedReader().readText()
         } catch (_: Exception) { "" }
+    }
+
+    private suspend fun ensureModel(context: Context): File {
+        val dir = context.getExternalFilesDir(null) ?: context.filesDir
+        val file = File(dir, "gemma-2b-it-gpu-int4.bin")
+        if (file.exists() && file.length() > 1_000_000_000) return file
+        withContext(Dispatchers.Main) { offlineStatus = "Baixando modelo (~1.5GB)..." ; downloadProgress = 0 }
+        val url = URL("https://storage.googleapis.com/mediapipe-models/llm_inference/gemma-2b-it-gpu-int4/float32/1/gemma-2b-it-gpu-int4.bin")
+        val conn = url.openConnection() as HttpURLConnection
+        conn.connect()
+        val total = conn.contentLength
+        conn.inputStream.use { input ->
+            file.outputStream().use { out ->
+                val buffer = ByteArray(8192)
+                var downloaded = 0L
+                var read: Int
+                while (input.read(buffer).also { read = it } != -1) {
+                    out.write(buffer, 0, read)
+                    downloaded += read
+                    if (total > 0) {
+                        val pct = ((downloaded * 100) / total).toInt()
+                        withContext(Dispatchers.Main) { downloadProgress = pct }
+                    }
+                }
+            }
+        }
+        withContext(Dispatchers.Main) { offlineStatus = "Modelo pronto" ; downloadProgress = 100 }
+        return file
     }
 
     private fun buildOfflinePrompt(question: String, wiki: String): String {

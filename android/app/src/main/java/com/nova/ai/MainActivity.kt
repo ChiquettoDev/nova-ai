@@ -90,6 +90,14 @@ fun ChatScreen(vm: ChatViewModel = viewModel()) {
                 Text("🗺", color = Color(0xFFB4B4B4), fontSize = 18.sp)
             }
         }
+        if (offline && vm.downloadProgress in 1..99) {
+            LinearProgressIndicator(
+                progress = { vm.downloadProgress / 100f },
+                modifier = Modifier.fillMaxWidth(),
+                color = Color(0xFF10A37F),
+                trackColor = Color(0xFF2F2F2F)
+            )
+        }
         HorizontalDivider(color = Color(0xFF2F2F2F))
 
         if (showSettings) {
