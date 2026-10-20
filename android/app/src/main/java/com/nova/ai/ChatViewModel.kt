@@ -94,7 +94,10 @@ class ChatViewModel : ViewModel() {
         isStreaming = true
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val modelFile = ensureModel(context)
+                val modelFile = File((context.getExternalFilesDir(null) ?: context.filesDir), "gemma-2b-it-gpu-int4.bin")
+                if (!modelFile.exists() || modelFile.length() < 1_000_000_000) {
+                    throw IllegalStateException("Modelo offline não encontrado. Baixe 'gemma-2b-it-gpu-int4.bin' (~1.5GB) para ${modelFile.absolutePath} e tente novamente.")
+                }
                 if (llm == null) {
                     val options = LlmInference.LlmInferenceOptions.builder()
                         .setModelPath(modelFile.absolutePath)
@@ -118,23 +121,6 @@ class ChatViewModel : ViewModel() {
                 }
             }
         }
-    }
-
-    private fun ensureModel(context: Context): File {
-        val dir = context.getExternalFilesDir(null) ?: context.filesDir
-        val file = File(dir, "gemma-2b-it-gpu-int4.bin")
-        if (file.exists() && file.length() > 1_000_000_000) return file
-        offlineStatus = "Baixando modelo..."
-        val url = URL("https://storage.googleapis.com/mediapipe-models/llm_inference/gemma-2b-it-gpu-int4/float32/1/gemma-2b-it-gpu-int4.bin")
-        val conn = url.openConnection() as HttpURLConnection
-        conn.connect()
-        conn.inputStream.use { input ->
-            file.outputStream().use { out ->
-                input.copyTo(out)
-            }
-        }
-        offlineStatus = "Modelo pronto"
-        return file
     }
 
     private fun loadWiki(context: Context): String {

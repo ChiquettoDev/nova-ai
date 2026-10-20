@@ -39,7 +39,9 @@
         android:appComponentFactory="androidx.core.app.CoreComponentFactory"
         android:debuggable="true"
         android:extractNativeLibs="false"
+        android:icon="@mipmap/ic_launcher"
         android:label="Nova"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/Theme.Nova" >
         <activity
             android:name="com.nova.ai.MainActivity"

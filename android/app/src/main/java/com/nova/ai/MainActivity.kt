@@ -1,6 +1,7 @@
 package com.nova.ai
 
 import android.content.Context
+import android.util.Log
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -32,6 +33,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val prefs = getSharedPreferences("nova", Context.MODE_PRIVATE)
         Api.baseUrl = prefs.getString("base_url", "https://nova-ai.onrender.com") ?: "https://nova-ai.onrender.com"
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            try {
+                val f = java.io.File(getExternalFilesDir(null), "crash.log")
+                f.appendText("Thread: ${thread.name}\n${android.util.Log.getStackTraceString(throwable)}\n---\n")
+            } catch (_: Exception) {}
+        }
         setContent {
             MaterialTheme(colorScheme = darkColorScheme()) {
                 Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFF212121)) {
@@ -126,11 +133,15 @@ fun ChatScreen(vm: ChatViewModel = viewModel()) {
                 title = { Text("Mapa", color = Color.White) },
                 text = {
                     AndroidView(factory = { ctx ->
-                        Configuration.getInstance().load(ctx, ctx.getSharedPreferences("osm", Context.MODE_PRIVATE))
-                        MapView(ctx).apply {
-                            setTileSource(TileSourceFactory.MAPNIK)
-                            controller.setZoom(12.0)
-                            controller.setCenter(GeoPoint(-23.55, -46.63))
+                        try {
+                            Configuration.getInstance().load(ctx, ctx.getSharedPreferences("osm", Context.MODE_PRIVATE))
+                            MapView(ctx).apply {
+                                setTileSource(TileSourceFactory.MAPNIK)
+                                controller.setZoom(12.0)
+                                controller.setCenter(GeoPoint(-23.55, -46.63))
+                            }
+                        } catch (e: Exception) {
+                            android.widget.TextView(ctx).apply { text = "Mapa indisponível: ${e.message}" }
                         }
                     }, modifier = Modifier.fillMaxWidth().height(300.dp))
                 },

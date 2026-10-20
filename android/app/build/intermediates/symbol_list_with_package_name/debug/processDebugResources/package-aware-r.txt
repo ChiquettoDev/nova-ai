@@ -24,6 +24,7 @@ color call_notification_decline_color
 color ink
 color notification_action_color_filter
 color notification_icon_bg_color
+color nova_bg
 color nova_blue
 color vector_tint_color
 color vector_tint_theme_color
@@ -59,6 +60,7 @@ drawable ic_call_answer_video
 drawable ic_call_answer_video_low
 drawable ic_call_decline
 drawable ic_call_decline_low
+drawable ic_launcher_foreground
 drawable ic_menu_compass
 drawable ic_menu_mapmode
 drawable ic_menu_mylocation
@@ -202,6 +204,8 @@ layout notification_template_custom_big
 layout notification_template_icon_group
 layout notification_template_part_chronometer
 layout notification_template_part_time
+mipmap ic_launcher
+mipmap ic_launcher_round
 string about
 string about_message
 string androidx_startup
