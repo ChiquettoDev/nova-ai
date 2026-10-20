@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ink">#0A0B10</color>
+    <color name="nova_blue">#0A84FF</color>
+    <style name="Theme.Nova" parent="android:Theme.Material.Light.NoActionBar"/>
+</resources>

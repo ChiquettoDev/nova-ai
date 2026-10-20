@@ -1,0 +1,5 @@
+R_DEF: Internal format may change without notice
+local
+color ink
+color nova_blue
+style Theme.Nova
