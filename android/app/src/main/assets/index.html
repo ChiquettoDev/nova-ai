@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #212121; color: #ECECEC; font-family: -apple-system, sans-serif; display: flex; flex-direction: column; height: 100vh; }
+header { padding: 12px 16px; background: #2F2F2F; display: flex; align-items: center; gap: 10px; }
+header h1 { font-size: 18px; }
+.status { font-size: 12px; color: #B4B4B4; margin-left: auto; }
+#messages { flex: 1; overflow-y: auto; padding: 16px; }
+.msg { margin-bottom: 16px; display: flex; gap: 10px; }
+.msg.user { flex-direction: row-reverse; }
+.avatar { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; flex-shrink: 0; }
+.avatar.assistant { background: #10A37F; color: #fff; }
+.avatar.user { background: #565656; color: #fff; }
+.bubble { max-width: 80%; padding: 10px 14px; border-radius: 12px; line-height: 1.5; }
+.msg.assistant .bubble { background: #2F2F2F; }
+.msg.user .bubble { background: #10A37F33; }
+.bubble img { max-width: 100%; border-radius: 8px; }
+footer { padding: 12px; background: #212121; border-top: 1px solid #2F2F2F; }
+.input-row { display: flex; gap: 8px; background: #2F2F2F; border-radius: 24px; padding: 4px 4px 4px 16px; }
+input { flex: 1; background: transparent; border: none; color: #fff; font-size: 15px; outline: none; }
+button { background: #10A37F; color: #fff; border: none; border-radius: 20px; padding: 8px 16px; cursor: pointer; }
+.empty { text-align: center; margin-top: 80px; color: #B4B4B4; }
+.empty h2 { color: #fff; margin-bottom: 8px; }
+.suggestion { background: #2F2F2F; padding: 12px; border-radius: 10px; margin: 6px 0; cursor: pointer; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Nova</h1>
+  <span class="status" id="status">Conectando...</span>
+</header>
+<div id="messages">
+  <div class="empty" id="empty">
+    <h2>Nova</h2>
+    <p>Como posso ajudar hoje?</p>
+    <div class="suggestion" onclick="send('Explique uma rede neural')">Explique uma rede neural</div>
+    <div class="suggestion" onclick="send('Escreva um poema sobre o mar')">Escreva um poema sobre o mar</div>
+    <div class="suggestion" onclick="send('Crie uma imagem de um gato astronauta')">Crie uma imagem de um gato astronauta</div>
+  </div>
+</div>
+<footer>
+  <div class="input-row">
+    <input id="input" placeholder="Enviar uma mensagem" onkeydown="if(event.key==='Enter')send()" />
+    <button onclick="send()">Enviar</button>
+  </div>
+</footer>
+<script>
+let messages = [];
+function setStatus(s){ document.getElementById('status').innerText = s; }
+function addMsg(role, content){
+  const empty = document.getElementById('empty');
+  if(empty) empty.style.display='none';
+  const div = document.createElement('div');
+  div.className = 'msg '+role;
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar '+role;
+  avatar.innerText = role==='user'?'V':'N';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.innerHTML = content.replace(/\\n/g,'<br>');
+  div.appendChild(avatar);
+  div.appendChild(bubble);
+  document.getElementById('messages').appendChild(div);
+  document.getElementById('messages').scrollTop = 999999;
+}
+function send(text){
+  const input = document.getElementById('input');
+  const t = (text||input.value).trim();
+  if(!t) return;
+  input.value='';
+  addMsg('user', t);
+  messages.push({role:'user',content:t});
+  if(t.toLowerCase().includes('imagem')||t.toLowerCase().includes('desenhe')){
+    const prompt = t.replace(/crie|gere|desenhe|uma|imagem|de/gi,'').trim()||t;
+    const url = NovaBridge.generateImage(prompt);
+    addMsg('assistant', '<img src="'+url+'" /><br><small>'+prompt+'</small>');
+    messages.push({role:'assistant',content:'![img]('+url+')'});
+    return;
+  }
+  const idx = messages.length;
+  addMsg('assistant', '...');
+  const lastBubble = document.querySelector('#messages .msg:last-child .bubble');
+  const res = NovaBridge.chat(JSON.stringify(messages), 'nova');
+  let content = '';
+  try { content = JSON.parse(res).content || res; } catch(e){ content = res; }
+  lastBubble.innerHTML = content.replace(/\n/g,'<br>');
+  messages.push({role:'assistant',content:content});
+}
+// initial health
+try {
+  const h = JSON.parse(NovaBridge.health());
+  setStatus(h.ok ? 'Nova online' : 'Ollama offline');
+} catch(e){ setStatus('Offline'); }
+</script>
+</body>
+</html>
