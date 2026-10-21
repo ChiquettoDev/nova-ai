@@ -59,7 +59,7 @@ class MainActivity : ComponentActivity() {
             Toast.makeText(this, "URL: ${Api.baseUrl}", Toast.LENGTH_LONG).show()
         }
 
-        addMessage("assistant", "Olá, eu sou a Nova. Como posso ajudar hoje?")
+        addMessage("assistant", "Ola, eu sou a Nova. Como posso ajudar hoje?")
     }
 
     private fun refreshHealth() {
@@ -72,7 +72,7 @@ class MainActivity : ComponentActivity() {
 
     private fun addMessage(role: String, content: String): TextView {
         val tv = TextView(this)
-        tv.text = (if (role == "user") "Você: " else "Nova: ") + content
+        tv.text = (if (role == "user") "Voce: " else "Nova: ") + content
         tv.textSize = 15f
         tv.setTextColor(if (role == "user") android.graphics.Color.parseColor("#10A37F") else android.graphics.Color.WHITE)
         tv.setPadding(0, 8, 0, 8)
@@ -104,7 +104,58 @@ class MainActivity : ComponentActivity() {
 
     private fun sendOffline(text: String) {
         addMessage("user", text)
-        addMessage("assistant", "Modo offline: baixe o modelo Gemma 2B para ativar (veja instruções).")
+        val assistantTv = addMessage("assistant", "Preparando modelo offline...")
+        isStreaming = true
+        sendButton.isEnabled = false
+        Thread {
+            try {
+                val modelFile = java.io.File((getExternalFilesDir(null) ?: filesDir), "gemma-2b-it-gpu-int4.bin")
+                if (!modelFile.exists() || modelFile.length() < 1000000000) {
+                    runOnUiThread { assistantTv.text = "Nova: Baixando modelo (1.5GB)..." }
+                    val url = java.net.URL("https://storage.googleapis.com/mediapipe-models/llm_inference/gemma-2b-it-gpu-int4/float32/1/gemma-2b-it-gpu-int4.bin")
+                    val conn = url.openConnection() as java.net.HttpURLConnection
+                    conn.connect()
+                    conn.inputStream.use { input ->
+                        modelFile.outputStream().use { out -> input.copyTo(out) }
+                    }
+                }
+                runOnUiThread { assistantTv.text = "Nova: Carregando modelo..." }
+                val options = com.google.mediapipe.tasks.genai.llminference.LlmInference.LlmInferenceOptions.builder()
+                    .setModelPath(modelFile.absolutePath)
+                    .setMaxTokens(512)
+                    .build()
+                val llm = com.google.mediapipe.tasks.genai.llminference.LlmInference.createFromOptions(this@MainActivity, options)
+                val wiki = assets.open("wikipedia.json").bufferedReader().readText()
+                val prompt = buildOfflinePrompt(text, wiki)
+                val response = llm.generateResponse(prompt)
+                runOnUiThread { assistantTv.text = "Nova: $response"; isStreaming = false; sendButton.isEnabled = true }
+            } catch (e: Exception) {
+                runOnUiThread { assistantTv.text = "Nova: Modo offline indisponivel: ${e.message}"; isStreaming = false; sendButton.isEnabled = true }
+            }
+        }.start()
+    }
+
+    private fun buildOfflinePrompt(question: String, wiki: String): String {
+        val sb = StringBuilder("Voce e a Nova, assistente de IA offline. Responda em portugues, de forma clara e util.\n")
+        try {
+            val arr = org.json.JSONArray(wiki)
+            val keywords = question.lowercase().split(Regex("\\W+")).filter { it.length > 3 }
+            val relevant = mutableListOf<String>()
+            for (i in 0 until arr.length()) {
+                val o = arr.getJSONObject(i)
+                val title = o.optString("title")
+                val content = o.optString("content")
+                if (keywords.any { title.lowercase().contains(it) || content.lowercase().contains(it) }) {
+                    relevant.add("[$title] $content")
+                }
+            }
+            if (relevant.isNotEmpty()) {
+                sb.append("\nConhecimento offline (Wikipedia):\n")
+                relevant.take(3).forEach { sb.append("- $it\n") }
+            }
+        } catch (_: Exception) {}
+        sb.append("\nPergunta: $question\nResposta:")
+        return sb.toString()
     }
 
     private fun generateImage(prompt: String) {

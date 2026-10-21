@@ -8,6 +8,22 @@ android {
     namespace = "com.nova.ai"
     compileSdk = 36
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("../release.keystore")
+            storePassword = "novapass"
+            keyAlias = "nova"
+            keyPassword = "novapass"
+        }
+    }
+
+    buildTypes {
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = false
+        }
+    }
+
     defaultConfig {
         applicationId = "com.nova.ai"
         minSdk = 24
@@ -49,6 +65,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("org.osmdroid:osmdroid-android:6.1.20")
     implementation("com.google.mediapipe:tasks-genai:0.10.14")
     debugImplementation("androidx.compose.ui:ui-tooling")
