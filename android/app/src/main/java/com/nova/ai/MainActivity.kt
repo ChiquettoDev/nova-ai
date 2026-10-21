@@ -4,6 +4,8 @@ import android.content.Context
 import android.os.Bundle
 import android.view.View
 import android.widget.*
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.activity.ComponentActivity
 
 class MainActivity : ComponentActivity() {
@@ -21,6 +23,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.main)
+
+        val footer = findViewById<LinearLayout>(R.id.inputField).parent as LinearLayout
+        ViewCompat.setOnApplyWindowInsetsListener(footer) { v, insets ->
+            val nav = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            v.setPadding(v.paddingLeft, v.paddingTop, v.paddingRight, nav.bottom + 8)
+            insets
+        }
 
         messagesContainer = findViewById(R.id.messagesContainer)
         scrollView = findViewById(R.id.scrollView)
